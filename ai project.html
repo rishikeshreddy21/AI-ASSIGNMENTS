@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Financial Report Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #f4f7fb;
+      color: #111827;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .app-header {
+      margin-bottom: 24px;
+    }
+
+    .app-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .app-header p {
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+
+    .upload-section {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .file-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      border-radius: 999px;
+      color: #f9fafb;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+      font-size: 0.95rem;
+    }
+
+    .file-label input {
+      display: none;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #6b7280;
+      max-width: 600px;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+    }
+
+    .summary-label {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .summary-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .summary-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      margin-top: 6px;
+    }
+
+    .pill-income {
+      background: #ecfeff;
+      color: #0e7490;
+    }
+
+    .pill-expense {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .pill-net {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+      padding: 14px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: 260px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    .card-title-text h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .card-title-text p {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .icon-button {
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: #4b5563;
+    }
+
+    .icon-button span {
+      font-size: 0.9rem;
+    }
+
+    .chart-wrapper {
+      flex: 1;
+      position: relative;
+      margin-top: 6px;
+    }
+
+    .chart-wrapper canvas {
+      width: 100% !important;
+      height: 220px !important;
+    }
+
+    .card-footer {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: #4b5563;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+
+    .cashflow-card .chart-wrapper canvas {
+      height: 260px !important;
+    }
+
+    .table-section {
+      margin-top: 18px;
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      padding: 14px 16px 16px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+      overflow-x: auto;
+    }
+
+    .table-section h3 {
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead {
+      background: #f9fafb;
+    }
+
+    th,
+    td {
+      padding: 7px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    .sample-section {
+      margin-top: 18px;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .sample-code {
+      margin-top: 6px;
+      background: #111827;
+      color: #e5e7eb;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      overflow-x: auto;
+      border: 1px solid #1f2937;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .app {
+        padding: 16px 10px 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>Financial Report Dashboard</h1>
+      <p>Upload your transaction CSV to see expense distribution, top accounts, and cash-flow analysis.</p>
+    </header>
+
+    <section class="upload-section">
+      <label for="fileInput" class="file-label">
+        <span>📤 Upload Transactions CSV</span>
+        <input type="file" id="fileInput" accept=".csv" />
+      </label>
+      <p class="hint">
+        Columns (case-insensitive): <code>Date</code>, <code>Description</code>, <code>Category</code>,
+        <code>Amount</code>, <code>Type</code> (credit/income or debit/expense).  
+        If <code>Type</code> is empty, positive = income, negative = expense.
+      </p>
+    </section>
+
+    <!-- Summary cards -->
+    <section class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-label">Total Inflow</div>
+        <div class="summary-value" id="totalIncome">₹0.00</div>
+        <div class="summary-pill pill-income">Inflow</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total Outflow</div>
+        <div class="summary-value" id="totalExpense">₹0.00</div>
+        <div class="summary-pill pill-expense">Outflow</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Net Cash Flow</div>
+        <div class="summary-value" id="netAmount">₹0.00</div>
+        <div class="summary-pill pill-net" id="netLabel">Positive</div>
+      </div>
+    </section>
+
+    <!-- Top charts -->
+    <section class="dashboard-grid">
+      <!-- Expense by category (pie) -->
+      <div class="card" id="expenseCard">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-icon">⏱</div>
+            <div class="card-title-text">
+              <h2>Expense by Category</h2>
+              <p>Distribution of expenses across categories</p>
+            </div>
+          </div>
+          <button class="icon-button" onclick="exportChart('categoryChartCanvas')">
+            <span>⬇</span> Export
+          </button>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="categoryChartCanvas"></canvas>
+        </div>
+        <div class="card-footer">
+          <span>Total Expense:</span>
+          <span id="categoryTotalExpense">₹0.00</span>
+        </div>
+      </div>
+
+      <!-- Top accounts (horizontal bar) -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-icon" style="background:#f5f3ff;color:#7c3aed;">📊</div>
+            <div class="card-title-text">
+              <h2>Top Accounts</h2>
+              <p>Accounts with highest transaction volumes</p>
+            </div>
+          </div>
+          <button class="icon-button" onclick="exportChart('topAccountsCanvas')">
+            <span>⬇</span> Export
+          </button>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="topAccountsCanvas"></canvas>
+        </div>
+        <div class="card-footer">
+          <span>Top by absolute amount.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cash flow analysis -->
+    <section class="card cashflow-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-icon" style="background:#ecfdf5;color:#047857;">√</div>
+          <div class="card-title-text">
+            <h2>Cash Flow Analysis</h2>
+            <p>Daily inflows and outflows</p>
+          </div>
+        </div>
+        <button class="icon-button" onclick="exportChart('cashFlowCanvas')">
+          <span>⬇</span> Export
+        </button>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="cashFlowCanvas"></canvas>
+      </div>
+      <div class="card-footer">
+        <div>
+          <span class="legend-dot" style="background:#22c55e;"></span><span style="margin-right:8px;">Inflow</span>
+          <span class="legend-dot" style="background:#ef4444;"></span><span style="margin-right:8px;">Outflow</span>
+          <span class="legend-dot" style="background:#3b82f6;"></span><span>Net Cash Flow</span>
+        </div>
+        <span id="cashflowRangeLabel"></span>
+      </div>
+    </section>
+
+    <!-- Tables -->
+    <section class="table-section">
+      <h3>Category-wise Breakdown</h3>
+      <table>
+        <thead>
+        <tr>
+          <th>Category</th>
+          <th>Total Income</th>
+          <th>Total Expense</th>
+        </tr>
+        </thead>
+        <tbody id="categoryTableBody"></tbody>
+      </table>
+    </section>
+
+    <section class="table-section">
+      <h3>All Transactions</h3>
+      <table>
+        <thead id="transactionTableHead"></thead>
+        <tbody id="transactionTableBody"></tbody>
+      </table>
+    </section>
+
+    <section class="sample-section">
+      <div>Sample CSV format:</div>
+      <pre class="sample-code">
+Date,Description,Category,Amount,Type
+2025-01-01,App Development Income,Income,80000,credit
+2025-01-02,Website Design Income,Income,50000,credit
+2025-01-03,SEO Services Income,Income,25000,credit
+2025-01-04,Office Rent,Office Expense,-12000,debit
+2025-01-05,Electricity Bill,Utilities,-3000,debit
+2025-01-06,Internet Bill,Utilities,-2000,debit
+      </pre>
+    </section>
+  </div>
+
+  <script>
+    // -------- CSV PARSING --------
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(",").map(h => h.trim());
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const values = line.split(",");
+        const row = {};
+        headers.forEach((h, idx) => row[h] = (values[idx] || "").trim());
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    function detectColumns(headers) {
+      const map = { dateKey: null, descKey: null, categoryKey: null, amountKey: null, typeKey: null };
+      headers.forEach(h => {
+        const lower = h.toLowerCase();
+        if (!map.dateKey && lower.includes("date")) map.dateKey = h;
+        else if (!map.descKey && (lower.includes("desc") || lower.includes("detail") || lower.includes("account")))
+          map.descKey = h;
+        else if (!map.categoryKey && (lower.includes("category") || lower.includes("cat")))
+          map.categoryKey = h;
+        else if (!map.amountKey && (lower.includes("amount") || lower.includes("amt")))
+          map.amountKey = h;
+        else if (!map.typeKey && (lower.includes("type") || lower.includes("txn") || lower.includes("transaction")))
+          map.typeKey = h;
+      });
+      return map;
+    }
+
+    function formatCurrency(value) {
+      const num = Number(value) || 0;
+      return "₹" + num.toFixed(2);
+    }
+
+    // -------- CHART EXPORT --------
+    function exportChart(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = canvasId + ".png";
+      link.click();
+    }
+
+    // -------- GLOBAL CHART REFS --------
+    let categoryChart = null;
+    let topAccountsChart = null;
+    let cashFlowChart = null;
+
+    // -------- MAIN UPDATE FUNCTION --------
+    function updateDashboard(rows, colMap) {
+      const { dateKey, descKey, categoryKey, amountKey, typeKey } = colMap;
+      if (!amountKey) {
+        alert("No 'Amount' column detected. Please include it in your CSV.");
+        return;
+      }
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const categoryTotals = {}; // category -> { income, expense }
+      const accountTotals = {};  // description -> abs(amount sum)
+      const dateStats = {};      // date -> { inflow, outflow }
+
+      const transactionTableHead = document.getElementById("transactionTableHead");
+      const transactionTableBody = document.getElementById("transactionTableBody");
+      transactionTableHead.innerHTML = "";
+      transactionTableBody.innerHTML = "";
+
+      const headers = Object.keys(rows[0] || {});
+      const headRow = document.createElement("tr");
+      headers.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      transactionTableHead.appendChild(headRow);
+
+      rows.forEach(row => {
+        const raw = row[amountKey];
+        if (raw === undefined || raw === "") return;
+        let amount = Number(raw);
+        if (isNaN(amount)) return;
+
+        let typeVal = (typeKey && row[typeKey]) ? row[typeKey].toLowerCase() : "";
+        let isIncome = false;
+        let isExpense = false;
+        if (typeVal.includes("credit") || typeVal.includes("income")) isIncome = true;
+        else if (typeVal.includes("debit") || typeVal.includes("expense")) isExpense = true;
+        else {
+          if (amount >= 0) isIncome = true;
+          else isExpense = true;
+        }
+
+        const absAmount = Math.abs(amount);
+        if (isIncome) totalIncome += absAmount;
+        if (isExpense) totalExpense += absAmount;
+
+        const cat = (categoryKey && row[categoryKey]) ? row[categoryKey] : "Uncategorized";
+        if (!categoryTotals[cat]) categoryTotals[cat] = { income: 0, expense: 0 };
+        if (isIncome) categoryTotals[cat].income += absAmount;
+        if (isExpense) categoryTotals[cat].expense += absAmount;
+
+        const account = (descKey && row[descKey]) ? row[descKey] : "Unknown";
+        accountTotals[account] = (accountTotals[account] || 0) + absAmount;
+
+        const dateStr = (dateKey && row[dateKey]) ? row[dateKey] : "Unknown";
+        if (!dateStats[dateStr]) dateStats[dateStr] = { inflow: 0, outflow: 0 };
+        if (isIncome) dateStats[dateStr].inflow += absAmount;
+        if (isExpense) dateStats[dateStr].outflow += absAmount;
+
+        const tr = document.createElement("tr");
+        headers.forEach(h => {
+          const td = document.createElement("td");
+          td.textContent = row[h];
+          tr.appendChild(td);
+        });
+        transactionTableBody.appendChild(tr);
+      });
+
+      // Summary cards
+      document.getElementById("totalIncome").textContent = formatCurrency(totalIncome);
+      document.getElementById("totalExpense").textContent = formatCurrency(totalExpense);
+      const net = totalIncome - totalExpense;
+      document.getElementById("netAmount").textContent = formatCurrency(net);
+      const netLabel = document.getElementById("netLabel");
+      netLabel.textContent = net >= 0 ? "Positive" : "Negative";
+      netLabel.className = "summary-pill " + (net >= 0 ? "pill-net" : "pill-expense");
+
+      // Category table
+      const categoryTableBody = document.getElementById("categoryTableBody");
+      categoryTableBody.innerHTML = "";
+      Object.keys(categoryTotals).forEach(cat => {
+        const tr = document.createElement("tr");
+        const tdCat = document.createElement("td");
+        const tdInc = document.createElement("td");
+        const tdExp = document.createElement("td");
+        tdCat.textContent = cat;
+        tdInc.textContent = formatCurrency(categoryTotals[cat].income);
+        tdExp.textContent = formatCurrency(categoryTotals[cat].expense);
+        tr.appendChild(tdCat); tr.appendChild(tdInc); tr.appendChild(tdExp);
+        categoryTableBody.appendChild(tr);
+      });
+
+      // ----- Charts -----
+
+      // Expense by Category (doughnut)
+      const cats = Object.keys(categoryTotals);
+      const catExpense = cats.map(c => categoryTotals[c].expense);
+      document.getElementById("categoryTotalExpense").textContent = formatCurrency(totalExpense);
+
+      const catCtx = document.getElementById("categoryChartCanvas").getContext("2d");
+      if (categoryChart) categoryChart.destroy();
+      categoryChart = new Chart(catCtx, {
+        type: "doughnut",
+        data: {
+          labels: cats,
+          datasets: [{
+            data: catExpense,
+            backgroundColor: [
+              "#3b82f6","#8b5cf6","#22c55e","#f97316",
+              "#ef4444","#0ea5e9","#a855f7","#eab308"
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: "60%",
+          plugins: {
+            legend: {
+              position: "left",
+              labels: { boxWidth: 10, boxHeight: 10 }
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const value = ctx.parsed;
+                  const total = catExpense.reduce((a,b)=>a+b,0) || 1;
+                  const pct = ((value/total)*100).toFixed(1);
+                  return `${ctx.label}: ${formatCurrency(value)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Top accounts (horizontal bar)
+      const accountEntries = Object.entries(accountTotals)
+        .sort((a,b) => b[1]-a[1])
+        .slice(0, 10);
+      const accountLabels = accountEntries.map(e => e[0]);
+      const accountValues = accountEntries.map(e => e[1]);
+      const accCtx = document.getElementById("topAccountsCanvas").getContext("2d");
+      if (topAccountsChart) topAccountsChart.destroy();
+      topAccountsChart = new Chart(accCtx, {
+        type: "bar",
+        data: {
+          labels: accountLabels,
+          datasets: [{
+            data: accountValues,
+            backgroundColor: "#a855f7"
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => formatCurrency(ctx.parsed.x)
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { callback: value => value },
+              grid: { color: "#e5e7eb" }
+            },
+            y: {
+              ticks: { autoSkip: false },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      // Cash Flow (line)
+      const dates = Object.keys(dateStats).sort((a,b) => {
+        const da = new Date(a); const db = new Date(b);
+        if (!isNaN(da) && !isNaN(db)) return da-db;
+        return a.localeCompare(b);
+      });
+      const inflows = dates.map(d => dateStats[d].inflow);
+      const outflows = dates.map(d => dateStats[d].outflow);
+      const nets = dates.map((d, i) => inflows[i] - outflows[i]);
+
+      const cfCtx = document.getElementById("cashFlowCanvas").getContext("2d");
+      if (cashFlowChart) cashFlowChart.destroy();
+      cashFlowChart = new Chart(cfCtx, {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [
+            {
+              label: "Inflow",
+              data: inflows,
+              borderColor: "#22c55e",
+              backgroundColor: "rgba(34,197,94,0.1)",
+              tension: 0.35,
+              pointRadius: 3,
+              fill: false
+            },
+            {
+              label: "Outflow",
+              data: outflows,
+              borderColor: "#ef4444",
+              backgroundColor: "rgba(239,68,68,0.1)",
+              tension: 0.35,
+              pointRadius: 3,
+              fill: false
+            },
+            {
+              label: "Net Cash Flow",
+              data: nets,
+              borderColor: "#3b82f6",
+              backgroundColor: "rgba(59,130,246,0.1)",
+              tension: 0.35,
+              pointRadius: 3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: "#e5e7eb" } },
+            y: {
+              grid: { color: "#e5e7eb" },
+              ticks: {
+                callback: v => v
+              }
+            }
+          }
+        }
+      });
+
+      const rangeLabel = document.getElementById("cashflowRangeLabel");
+      if (dates.length) rangeLabel.textContent = `${dates[0]} → ${dates[dates.length - 1]}`;
+      else rangeLabel.textContent = "No dated transactions.";
+    }
+
+    // -------- FILE INPUT HANDLER --------
+    document.getElementById("fileInput").addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const text = e.target.result;
+        const rows = parseCSV(text);
+        if (!rows.length) {
+          alert("No data found in this CSV.");
+          return;
+        }
+        const headers = Object.keys(rows[0]);
+        const colMap = detectColumns(headers);
+        updateDashboard(rows, colMap);
+      };
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
+
+
